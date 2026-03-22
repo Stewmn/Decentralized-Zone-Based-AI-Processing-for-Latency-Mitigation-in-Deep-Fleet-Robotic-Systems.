@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>DeepFleet AI - Central Hub v3.1 WHITE-FRAME</title>
+    <style>
+        :root {
+            --bg-color: #0d1117;
+            --panel-color: #161b22;
+            --accent-color: #58a6ff;
+            --text-color: #c9d1d9;
+            --border-color: #30363d;
+            --success: #238636;
+            --danger: #da3633;
+            --warning: #d29922;
+            --info: #ab7df6;
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        header {
+            padding: 15px 30px;
+            background: var(--panel-color);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .conn-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-family: monospace;
+            font-size: 0.85em;
+        }
+
+        .pulse-dot {
+            width: 8px;
+            height: 8px;
+            background-color: var(--success);
+            border-radius: 50%;
+            box-shadow: 0 0 0 rgba(35, 134, 54, 0.4);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(35, 134, 54, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(35, 134, 54, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(35, 134, 54, 0); }
+        }
+
+        .main-layout {
+            display: grid;
+            grid-template-columns: 320px 1fr 350px;
+            gap: 15px;
+            padding: 15px;
+            flex-grow: 1;
+        }
+
+        .panel {
+            background: var(--panel-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .fleet-status-bar {
+            display: flex;
+            justify-content: space-around;
+            background: #0d1117;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            border: 1px solid var(--border-color);
+        }
+
+        .status-item { text-align: center; }
+        .status-val { display: block; font-size: 1.4em; font-weight: bold; font-family: monospace; }
+        .status-label { font-size: 0.7em; color: #8b949e; text-transform: uppercase; letter-spacing: 1px; }
+
+        #canvas-viewport {
+            flex-grow: 1;
+            background: #000;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            position: relative;
+            margin: 5px 0;
+            cursor: crosshair;
+        }
+
+        canvas { position: absolute; top: 0; left: 0; }
+
+        .stat-box {
+            background: #0d1117;
+            padding: 10px;
+            border-radius: 4px;
+            border-left: 3px solid var(--accent-color);
+            margin-bottom: 10px;
+            font-size: 0.9em;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .avail-tag { font-size: 0.8em; color: var(--warning); font-weight: bold; }
+        .log-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+
+        #notification-log {
+            flex-grow: 1;
+            background: #05070a;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 10px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 0.8em;
+        }
+
+        button {
+            background: var(--success);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: opacity 0.2s;
+        }
+
+        button:hover { opacity: 0.8; }
+        .btn-clear { background: transparent; border: 1px solid var(--border-color); padding: 5px 10px; font-size: 0.7em; color: #8b949e; }
+        .btn-clear:hover { background: var(--danger); color: white; border-color: var(--danger); }
+
+        select {
+            background: #21262d;
+            color: white;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid var(--border-color);
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h2 style="margin:0; font-size: 1.2em; letter-spacing: 1px;">CENTRAL AI HUB</h2>
+    <div class="conn-status">
+        <span id="latency" style="color: var(--accent-color)">LATENCY: 24ms</span>
+        <div class="pulse-dot"></div>
+        <span style="color:var(--success)">LINK STABLE</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 8px;">
+        <a href="ind.html" target="_blank" style="color: var(--accent-color); text-decoration: none; font-size: 0.9em;">Go to Fleet Analytics</a>
+        <button onclick="window.open('ind.html', '_blank')" style="background: var(--accent-color); border: none; color: #0a0a0a; padding: 6px 10px; border-radius: 4px; font-weight: 700; cursor: pointer;">Open Fleet Analytics</button>
+        <button id="deleteBtn" style="background: var(--danger); border: none; color: white; padding: 6px 10px; border-radius: 4px; font-weight: 700; cursor: pointer;">Delete Selected</button>
+    </div>
+</header>
+
+<div class="main-layout">
+    <div class="panel">
+        <h3>Job Assigner</h3>
+        <select id="job-selector">
+            <option value="A">Job A (Div 1)</option>
+            <option value="B">Job B (Div 4)</option>
+            <option value="C">Job C (Div 2)</option>
+        </select>
+        <button onclick="spawnAMR()">ALLOCATE NEW AMR</button>
+        
+        <div style="margin-top:20px">
+            <h4 style="font-size: 0.9em; margin-bottom: 10px; color: #8b949e;">Live Availability</h4>
+            <div class="stat-box"><span>Job A</span><span class="avail-tag">AVAIL: <span id="avail-A">12</span></span></div>
+            <div class="stat-box"><span>Job B</span><span class="avail-tag">AVAIL: <span id="avail-B">8</span></span></div>
+            <div class="stat-box"><span>Job C</span><span class="avail-tag">AVAIL: <span id="avail-C">15</span></span></div>
+        </div>
+
+        <div style="margin-top:20px; border-top: 1px solid var(--border-color); padding-top: 15px;">
+            <h4 style="font-size: 0.9em; margin-bottom: 10px; color: #8b949e;">Throughput</h4>
+            <div class="stat-box" style="border-left-color: #ab7df6">Div 1: <span id="d1">0</span></div>
+            <div class="stat-box" style="border-left-color: #ab7df6">Div 2: <span id="d2">0</span></div>
+            <div class="stat-box" style="border-left-color: #ab7df6">Div 4: <span id="d4">0</span></div>
+            <button id="stopDivision4" style="margin-top:10px; background:#ff0000;">STOP DIVISION 4</button>
+            <button id="openDivision4" style="margin-top:10px; margin-left:5px; background:#00c851;">OPEN DIVISION 4</button>
+        </div>
+    </div>
+
+    <div class="panel">
+        <div class="fleet-status-bar">
+            <div class="status-item"><span class="status-val" id="stat-active" style="color: var(--warning)">0</span><span class="status-label">In Work</span></div>
+            <div class="status-item"><span class="status-val" id="stat-ready" style="color: var(--accent-color)">0</span><span class="status-label">Working</span></div>
+            <div class="status-item"><span class="status-val" id="stat-available" style="color: var(--success)">35</span><span class="status-label">Available</span></div>
+        </div>
+        
+        <div id="canvas-viewport">
+            <canvas id="hubCanvas"></canvas>
+        </div>
+        <p style="color: #8b949e; font-size: 0.75em; text-align: center;">[ Click White Frame for Detailed Telemetry ]</p>
+    </div>
+
+    <div class="panel">
+        <div class="log-header">
+            <h3 style="margin:0">Notification Log</h3>
+            <button class="btn-clear" onclick="clearLogs()">CLEAR LOGS</button>
+        </div>
+        <div id="notification-log"></div>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('hubCanvas');
+    const ctx = canvas.getContext('2d');
+    const logContainer = document.getElementById('notification-log');
+    const viewport = document.getElementById('canvas-viewport');
+    const latencyEl = document.getElementById('latency');
+    
+    let amrs = [];
+    let selectedAmrId = null;
+    let availability = { A: 12, B: 8, C: 15 };
+    let centralAllocation = { A: 0, B: 0, C: 0 };
+    let division4Stopped = false;
+    let d34ReleaseIndex = 0;
+    let triggerLaunch = false;
+    let isHidden = false;
+    let lastFluctuation = 0;
+
+    document.addEventListener('visibilitychange', () => {
+        isHidden = document.hidden;
+        if (!isHidden) {
+            console.log('Tab became visible, resuming render...');
+            renderLoop();
+        }
+    });
+
+    window.addEventListener('storage', (e) => {
+        if (e.key === 'initialAvailability') {
+            try {
+                const payload = JSON.parse(e.newValue || '{}');
+                const jobTypes = ['A','B','C'];
+                jobTypes.forEach(type => {
+                    const requested = parseInt(payload[type]) || 0;
+                    const current = centralAllocation[type] || 0;
+                    if (requested > current) {
+                        const delta = requested - current;
+                        for (let i = 0; i < delta; i++) {
+                            spawnAMR(type);
+                        }
+                    }
+                    centralAllocation[type] = requested;
+                    availability[type] = requested;
+                    document.getElementById(`avail-${type}`).innerText = availability[type];
+                });
+            } catch (err) {
+                console.error('initialAvailability parse failed', err);
+            }
+        }
+
+        if (e.key === 'agv_reached_arm') {
+            try {
+                const payload = JSON.parse(e.newValue);
+                console.log('[Storage Event] agv_reached_arm received:', payload);
+                let advancedCount = 0;
+                amrs.forEach(amr => {
+                    console.log(`[Storage Event] Checking AMR ${amr.id}: waitingForArm=${amr.waitingForArm}, payload.agv=${payload.agv}, match=${amr.id === payload.agv}`);
+                    if (amr.waitingForArm && amr.id === payload.agv) {
+                        console.log(`[Storage Event] RETURNING ${amr.id} back to Division 4 and making invisible`);
+                        amr.waitingForArm = false;
+                        amr.step = 7; // Division 4
+                        amr.progress = 0;
+                        amr.isInvisible = true;
+                        amr.status = 'returned';
+                        advancedCount++;
+                        const elapsed = Math.floor((Date.now() - amr.startTime) / 1000);
+                        writeLog(`[${amr.id}] returned to Division 4 after launch (invisible) at elapsed time: ${elapsed}s`);
+                    }
+                });
+                if (advancedCount === 0) {
+                    console.warn('[Storage Event] No AMR matched the condition');
+                }
+            } catch (err) {
+                console.error('agv_reached_arm parse failed', err);
+            }
+        }
+
+        if (e.key === 'division4Stopped') {
+            division4Stopped = e.newValue === 'true';
+        }
+    });
+
+    const nodes = [
+        {id: 'free', x: 0.1, y: 0.5, name: 'Free Station'},
+        {id: 'alloc', x: 0.2, y: 0.5, name: 'Job Allocation'},
+        {id: 'd1', x: 0.3, y: 0.5, name: 'Division 1', type: 'work'},
+        {id: 'd12', x: 0.4, y: 0.3, name: 'Div (1,2)'},
+        {id: 'd2', x: 0.5, y: 0.3, name: 'Division 2', type: 'work'},
+        {id: 'd3', x: 0.6, y: 0.5, name: 'Division 3', type: 'work'},
+        {id: 'd34', x: 0.7, y: 0.7, name: 'Div (3,4)'},
+        {id: 'd4', x: 0.8, y: 0.7, name: 'Division 4', type: 'work'},
+        {id: 'packing', x: 0.9, y: 0.5, name: 'Packing'},
+        {id: 'dock2', x: 0.97, y: 0.5, name: 'Dock Entrance Two'}
+    ];
+
+    class AMR {
+        constructor(id, jobType) {
+            this.id = "AMR-" + id;
+            this.jobType = jobType;
+            this.step = 0;
+            this.prevStep = 0;
+            this.progress = 0;
+            this.battery = 100;
+            this.isWaiting = false;
+            this.waitTimer = 0;
+            this.status = 'ready';
+            this.startTime = Date.now();
+            this.currentSpeed = 0;
+            this.screenX = 0;
+            this.screenY = 0;
+            this.hasTriggered = false;
+            this.waitingForArm = false;
+            this.isInvisible = false;
+        }
+
+        update() {
+            if (this.isInvisible) return;
+
+            if (this.isWaiting) {
+                this.waitTimer--;
+                this.currentSpeed = 0;
+                if (this.waitTimer <= 0) {
+                    this.isWaiting = false;
+                    this.status = 'ready';
+                }
+                return;
+            }
+
+            if (this.waitingForArm) {
+                this.currentSpeed = 0;
+                return;
+            }
+
+            if (this.step < nodes.length - 1) {
+                let speedVal;
+                if (this.step === 6 || this.step === 7) {
+                    speedVal = 0.006;
+                } else {
+                    speedVal = 0.028;
+                }
+                this.progress += speedVal;
+                this.currentSpeed = speedVal * 1200; // Scaled for logic
+
+                if (this.progress >= 1) {
+                    this.progress = 0;
+                    this.prevStep = this.step;
+                    this.step++;
+                    this.battery -= Math.random() * 2 + 1;
+                    let currentNode = nodes[this.step];
+
+                    // Job-specific trespass routing
+                    if (currentNode.id === 'd1' && this.jobType === 'A' && !division4Stopped) {
+                        this.step = nodes.findIndex(n => n.id === 'd34'); // trespass 2
+                        this.progress = 0;
+                        currentNode = nodes[this.step];
+                        writeLog(`[${this.id}] Job A trespass 2 route (d1 -> d34)`);
+                    } else if (currentNode.id === 'd2' && this.jobType === 'A' && division4Stopped) {
+                        this.step = nodes.findIndex(n => n.id === 'd3'); // trespass 3
+                        this.progress = 0;
+                        currentNode = nodes[this.step];
+                        writeLog(`[${this.id}] Job A emergency trespass 3 route (d2 -> d3)`);
+                    } else if (currentNode.id === 'd3' && this.jobType === 'C') {
+                        this.step = nodes.findIndex(n => n.id === 'packing'); // trespass 1
+                        this.progress = 0;
+                        currentNode = nodes[this.step];
+                        writeLog(`[${this.id}] Job C trespass 1 route (d3 -> packing)`);
+                    }
+
+                    if (division4Stopped) {
+                        if (currentNode.id === 'd34') {
+                            if (this.jobType === 'B') {
+                                this.isWaiting = true;
+                                this.status = 'waiting at d34';
+                                this.waitTimer = 999999;
+                                writeLog(`[${this.id}] stopped at Div (3,4) for Job B (waiting for open)`);
+                                return;
+                            }
+                        }
+
+                        if (currentNode.id === 'd4') {
+                            // prevent entering D4 during emergency
+                            this.step = nodes.findIndex(n => n.id === 'd34');
+                            this.progress = 0;
+                            currentNode = nodes[this.step];
+                            writeLog(`[${this.id}] blocked from entering D4; rerouted to Div (3,4)`);
+                            if (this.jobType === 'B') {
+                                this.isWaiting = true;
+                                this.status = 'waiting at d34';
+                                this.waitTimer = 999999;
+                                return;
+                            }
+                        }
+
+                        if (currentNode.id === 'd2' && this.jobType === 'A') {
+                            this.step = nodes.findIndex(n => n.id === 'd3'); // trespass 3
+                            this.progress = 0;
+                            currentNode = nodes[this.step];
+                            writeLog(`[${this.id}] Job A emergency trespass 3 (d2 -> d3)`);
+                        }
+                    }
+
+                    if (currentNode.id === 'd1' && this.jobType === 'A' && !division4Stopped) {
+                        this.step = nodes.findIndex(n => n.id === 'd34'); // trespass 2 normal
+                        this.progress = 0;
+                        currentNode = nodes[this.step];
+                        writeLog(`[${this.id}] Job A normal trespass 2 (d1 -> d34)`);
+                    }
+
+                    if (currentNode.id === 'd3' && this.jobType === 'C') {
+                        this.step = nodes.findIndex(n => n.id === 'packing'); // trespass 1
+                        this.progress = 0;
+                        currentNode = nodes[this.step];
+                        writeLog(`[${this.id}] Job C trespass 1 route (d3 -> packing)`);
+                    }
+
+                    if (currentNode.id === 'd34' && division4Stopped && this.jobType !== 'B') {
+                        this.step = nodes.findIndex(n => n.id === 'packing');
+                        this.progress = 0;
+                        currentNode = nodes[this.step];
+                        writeLog(`[${this.id}] Div (3,4) bypass to Packing for non-B job during emergency`);
+                    }
+
+                    // Crossed station update (local only)
+                    const elapsed = Math.floor((Date.now() - this.startTime) / 1000);
+                    writeLog(`[${this.id}] crossed ${currentNode.name} at elapsed time: ${elapsed}s`);
+
+                    if (currentNode.type === 'work') {
+                        this.isWaiting = true;
+                        this.status = 'in-work';
+                        this.waitTimer = Math.floor(Math.random() * 120) + 90;
+                        updateCounter(currentNode.name);
+                    }
+
+                    if (currentNode.id === 'd34' && !this.hasTriggered) {
+                        this.hasTriggered = true;
+                        localStorage.setItem('central_notification', JSON.stringify({ type: 'oncoming', agv: this.id, region: currentNode.name, elapsed, speed: this.currentSpeed, jobType: this.jobType }));
+                    }
+
+                    if (currentNode.id === 'd4') {
+                        this.waitingForArm = true;
+                        localStorage.setItem('triggerLaunch', JSON.stringify({ source: 'central', agv: this.id, region: currentNode.name, elapsed, jobType: this.jobType }));
+                    }
+                }
+            } else {
+                if (this.status !== 'finished') {
+                    this.status = 'finished';
+                    this.isInvisible = true;
+                    const elapsed = Math.floor((Date.now() - this.startTime) / 1000);
+                    writeLog(`[${this.id}] EXITED at Dock Entrance Two (total time: ${elapsed}s)`);
+                    console.log(`AMR ${this.id} marked as finished at step ${this.step}`);
+                    availability[this.jobType]++;
+                    document.getElementById(`avail-${this.jobType}`).innerText = availability[this.jobType];
+                }
+            }
+        }
+
+        draw() {
+            if (this.isInvisible) return;
+
+            const start = nodes[this.step];
+            const end = nodes[this.step + 1] || start;
+            this.screenX = (start.x + (end.x - start.x) * this.progress) * canvas.width;
+            this.screenY = (start.y + (end.y - start.y) * this.progress) * canvas.height;
+
+            // 1. Selection Highlight (Outer blue ring if selected)
+            if (selectedAmrId === this.id) {
+                ctx.strokeStyle = "var(--accent-color)";
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.arc(this.screenX, this.screenY, 16, 0, Math.PI * 2);
+                ctx.stroke();
+                this.drawTelemetry();
+            }
+
+            // 2. The AMR Body (White Round Frame)
+            ctx.strokeStyle = "white";
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(this.screenX, this.screenY, 10, 0, Math.PI * 2);
+            ctx.stroke();
+            
+            // Central core changes color based on status
+            ctx.fillStyle = this.isWaiting ? "var(--warning)" : "rgba(255, 255, 255, 0.2)";
+            ctx.beginPath();
+            ctx.arc(this.screenX, this.screenY, 4, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        drawTelemetry() {
+            const elapsed = Math.floor((Date.now() - this.startTime) / 1000);
+            const boxW = 120;
+            const boxH = 70;
+            const bx = this.screenX - boxW / 2;
+            const by = this.screenY - 90;
+
+            // Container
+            ctx.fillStyle = "rgba(13, 17, 23, 0.9)";
+            ctx.strokeStyle = "white";
+            ctx.lineWidth = 1;
+            ctx.fillRect(bx, by, boxW, boxH);
+            ctx.strokeRect(bx, by, boxW, boxH);
+
+            // Data lines
+            ctx.fillStyle = "white";
+            ctx.font = "bold 10px monospace";
+            ctx.fillText(`ID: ${this.id}`, bx + 8, by + 15);
+            
+            ctx.fillStyle = "#8b949e";
+            ctx.font = "9px monospace";
+            ctx.fillText(`JOB: TYPE ${this.jobType}`, bx + 8, by + 30);
+            ctx.fillText(`TIME: ${elapsed}s`, bx + 8, by + 42);
+            ctx.fillText(`SPD: ${this.currentSpeed.toFixed(1)} u/s`, bx + 8, by + 54);
+            
+            // Battery indicator
+            ctx.fillStyle = this.battery < 20 ? "var(--danger)" : "var(--success)";
+            ctx.fillText(`BAT: ${Math.max(0, Math.floor(this.battery))}%`, bx + 8, by + 64);
+        }
+    }
+
+    // Interaction Logic
+    canvas.addEventListener('mousedown', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+        
+        let found = false;
+        amrs.forEach(a => {
+            const dist = Math.sqrt((mouseX - a.screenX)**2 + (mouseY - a.screenY)**2);
+            if (dist < 18) { // Click tolerance
+                selectedAmrId = a.id;
+                found = true;
+            }
+        });
+        if (!found) selectedAmrId = null;
+    });
+
+    function updateCounter(name) {
+        const el = { 'Div 1': 'd1', 'Div 2': 'd2', 'Div 4': 'd4' }[name];
+        if (el) document.getElementById(el).innerText++;
+    }
+
+    function spawnAMR(type) {
+        type = type || document.getElementById('job-selector').value;
+        if (availability[type] > 0) {
+            availability[type]--;
+            document.getElementById(`avail-${type}`).innerText = availability[type];
+            amrs.push(new AMR(Math.floor(Math.random() * 900) + 100, type));
+            writeLog(`AMR Allocated: ${type}`);
+        }
+    }
+
+    function deleteSelectedAMR() {
+        if (!selectedAmrId) {
+            return alert('Select an AMR by clicking it first.');
+        }
+        const idx = amrs.findIndex(a => a.id === selectedAmrId);
+        if (idx === -1) {
+            return alert('Selected AMR not found or already removed.');
+        }
+        const removed = amrs.splice(idx, 1)[0];
+        removed.isInvisible = true;
+        removed.status = 'deleted';
+        selectedAmrId = null;
+        writeLog(`[${removed.id}] removed via Delete button`);
+    }
+
+    document.getElementById('deleteBtn').addEventListener('click', deleteSelectedAMR);
+
+    function engineTick() {
+        // Even when hidden, keep simulation state moving (browser may throttle but still updates).
+        const beforeCount = amrs.length;
+        amrs = amrs.filter(a => a.status !== 'finished');
+        if (amrs.length < beforeCount) {
+            console.log(`Removed ${beforeCount - amrs.length} finished AMRs. Remaining: ${amrs.length}`);
+        }
+        amrs.forEach(a => {
+            a.update();
+        });
+
+        amrs = amrs.filter(a => !a.isInvisible);
+
+        if (triggerLaunch) {
+            localStorage.setItem('triggerLaunch', JSON.stringify({ source: 'central', updated: Date.now() }));
+            triggerLaunch = false;
+        }
+
+        if (!division4Stopped) {
+            const waitingAtD34 = amrs.filter(a => a.status === 'waiting at d34');
+            if (waitingAtD34.length > 0) {
+                const next = waitingAtD34[0];
+                next.isWaiting = false;
+                next.waitTimer = 0;
+                next.status = 'ready';
+                next.step = nodes.findIndex(n => n.id === 'd34');
+                next.progress = 0;
+                writeLog(`[${next.id}] released from Div (3,4), proceeding toward D4`);
+            }
+        }
+
+        document.getElementById('stopDivision4').onclick = () => {
+            division4Stopped = true;
+            localStorage.setItem('division4Stopped', 'true');
+            writeLog('Division 4 emergency break activated (red out).');
+        };
+
+        document.getElementById('openDivision4').onclick = () => {
+            division4Stopped = false;
+            localStorage.setItem('division4Stopped', 'false');
+            writeLog('Division 4 reopened to normal operations.');
+        };
+
+        // Fluctuate job availability
+        if (Date.now() - lastFluctuation > 3000 + Math.random() * 5000) {
+            const types = ['A', 'B', 'C'];
+            const type = types[Math.floor(Math.random() * 3)];
+            availability[type] += Math.floor(Math.random() * 5) - 2; // -2 to +2
+            availability[type] = Math.max(0, availability[type]);
+            document.getElementById(`avail-${type}`).innerText = availability[type];
+            lastFluctuation = Date.now();
+        }
+
+        const active = amrs.filter(a => a.status === 'in-work').length;
+        const ready = amrs.filter(a => a.status !== 'in-work').length;
+        document.getElementById('stat-active').innerText = active;
+        document.getElementById('stat-ready').innerText = ready;
+        document.getElementById('stat-available').innerText = (availability.A + availability.B + availability.C);
+    }
+
+    function renderLoop() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Additional Link paths with trespass labels
+        const links = [
+            {from: 'd3', to: 'packing', label: 'trespass 1'},
+            {from: 'd1', to: 'd34', label: 'trespass 2'},
+            {from: 'd2', to: 'd3', label: 'trespass 3'}
+        ];
+        links.forEach(link => {
+            const f = nodes.find(n => n.id === link.from);
+            const t = nodes.find(n => n.id === link.to);
+            if (!f || !t) return;
+            const x1 = f.x * canvas.width;
+            const y1 = f.y * canvas.height;
+            const x2 = t.x * canvas.width;
+            const y2 = t.y * canvas.height;
+            ctx.strokeStyle = 'rgba(255, 100, 25, 0.85)';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([8, 6]);
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            const mx = (x1 + x2) / 2;
+            const my = (y1 + y2) / 2;
+            ctx.fillStyle = 'rgba(255, 180, 0, 1)';
+            ctx.font = '12px Segoe UI';
+            ctx.fillText(link.label, mx + 5, my - 5);
+        });
+
+        // Path Design
+        ctx.strokeStyle = "#21262d";
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        nodes.forEach((n, i) => {
+            if (i === 0) ctx.moveTo(n.x * canvas.width, n.y * canvas.height);
+            else ctx.lineTo(n.x * canvas.width, n.y * canvas.height);
+        });
+        ctx.stroke();
+
+        nodes.forEach(n => {
+            if (n.id === 'd4' && division4Stopped) {
+                ctx.fillStyle = '#bb0000';
+                ctx.strokeStyle = '#ff6f6f';
+            } else {
+                ctx.fillStyle = n.type === 'work' ? "#1f242c" : "#0d1117";
+                ctx.strokeStyle = n.type === 'work' ? "var(--warning)" : "#30363d";
+            }
+            ctx.beginPath();
+            ctx.arc(n.x * canvas.width, n.y * canvas.height, 5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+        });
+
+        // Stop indicator for Division 4
+        if (division4Stopped) {
+            const d4node = nodes.find(n => n.id === 'd4');
+            if (d4node) {
+                const x = d4node.x * canvas.width;
+                const y = d4node.y * canvas.height;
+                ctx.fillStyle = 'red';
+                ctx.beginPath();
+                ctx.arc(x, y, 10, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+            }
+        }
+
+        amrs.forEach(a => {
+            a.draw();
+        });
+
+        requestAnimationFrame(renderLoop);
+    }
+
+    function main() {
+        syncCanvas();
+        loadState();
+        setInterval(engineTick, 100);
+        requestAnimationFrame(renderLoop);
+        setInterval(saveState, 1000);
+    }
+
+    function writeLog(t) {
+        const div = document.createElement('div');
+        div.style.padding = "2px 0";
+        div.innerHTML = `<span style="color:var(--accent-color)">[SYS]</span> ${t}`;
+        logContainer.prepend(div);
+    }
+
+    function clearLogs() {
+        document.getElementById('notification-log').innerHTML = '';
+    }
+
+    function saveState() {
+        const state = {
+            amrs: amrs.map(a => ({
+                id: a.id,
+                jobType: a.jobType,
+                step: a.step,
+                prevStep: a.prevStep,
+                progress: a.progress,
+                battery: a.battery,
+                isWaiting: a.isWaiting,
+                waitTimer: a.waitTimer,
+                status: a.status,
+                startTime: a.startTime,
+                currentSpeed: a.currentSpeed,
+                hasTriggered: a.hasTriggered,
+                waitingForArm: a.waitingForArm,
+                isInvisible: a.isInvisible
+            })),
+            selectedAmrId,
+            availability: { ...availability }
+        };
+        localStorage.setItem('centralState', JSON.stringify(state));
+    }
+
+    function loadState() {
+        const savedState = localStorage.getItem('centralState');
+        const initialAvail = JSON.parse(localStorage.getItem('initialAvailability') || 'null');
+        if (initialAvail) {
+            availability = initialAvail;
+            centralAllocation = { ...initialAvail };
+            localStorage.removeItem('initialAvailability');
+            document.getElementById('avail-A').innerText = availability.A;
+            document.getElementById('avail-B').innerText = availability.B;
+            document.getElementById('avail-C').innerText = availability.C;
+            // Auto-spawn based on incoming allocation
+            ['A','B','C'].forEach(type => {
+                const count = initialAvail[type] || 0;
+                for (let i = 0; i < count; i++) {
+                    spawnAMR(type);
+                }
+            });
+            return;
+        }
+        if (!savedState) return;
+        try {
+            const state = JSON.parse(savedState);
+            if (state && state.availability) {
+                availability = state.availability;
+                document.getElementById('avail-A').innerText = availability.A;
+                document.getElementById('avail-B').innerText = availability.B;
+                document.getElementById('avail-C').innerText = availability.C;
+            }
+            if (Array.isArray(state.amrs)) {
+                amrs = state.amrs.map(a => {
+                    const amr = new AMR(a.id.replace('AMR-', ''), a.jobType || 'A');
+                    amr.step = a.step || 0;
+                    amr.prevStep = a.prevStep || 0;
+                    amr.progress = a.progress || 0;
+                    amr.battery = a.battery || 100;
+                    amr.isWaiting = a.isWaiting || false;
+                    amr.waitTimer = a.waitTimer || 0;
+                    amr.status = a.status || 'ready';
+                    amr.startTime = a.startTime || Date.now();
+                    amr.currentSpeed = a.currentSpeed || 0;
+                    amr.hasTriggered = a.hasTriggered || false;
+                    amr.waitingForArm = a.waitingForArm || false;
+                    amr.isInvisible = a.isInvisible || false;
+                    return amr;
+                });
+            }
+            selectedAmrId = state.selectedAmrId || null;
+        } catch (error) {
+            console.error('Failed to load central state:', error);
+        }
+    }
+
+    function syncCanvas() {
+        canvas.width = viewport.clientWidth;
+        canvas.height = viewport.clientHeight;
+    }
+
+    window.addEventListener('resize', syncCanvas);
+    syncCanvas();
+    main();
+</script>
+</body>
+</html>

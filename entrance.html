@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Entrance Screen - Deep Fleet Robotic Systems</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #000;
+            color: #c9d1d9;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-image: linear-gradient(rgba(0,0,0,0.78), rgba(8,8,8,0.89));
+        }
+        h1 {
+            font-size: 3em;
+            text-align: center;
+            margin-bottom: 40px;
+            color: #58a6ff;
+            text-shadow: 0 0 20px rgba(88, 166, 255, 0.8), 0 0 40px rgba(88, 166, 255, 0.4);
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+        @keyframes glow {
+            from { text-shadow: 0 0 20px rgba(88, 166, 255, 0.8), 0 0 40px rgba(88, 166, 255, 0.4); }
+            to { text-shadow: 0 0 30px rgba(88, 166, 255, 1), 0 0 60px rgba(88, 166, 255, 0.6); }
+        }
+        .container {
+            max-width: 900px;
+            width: 100%;
+            backdrop-filter: blur(10px);
+            background: rgba(22, 27, 34, 0.9);
+            border: 1px solid rgba(48, 54, 61, 0.5);
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        }
+        .section {
+            background: rgba(33, 38, 45, 0.8);
+            border: 1px solid rgba(48, 54, 61, 0.3);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: inset 0 1px 3px rgba(255, 255, 255, 0.1);
+        }
+        .section h2 {
+            color: #58a6ff;
+            margin-top: 0;
+            font-size: 1.5em;
+            text-shadow: 0 0 10px rgba(88, 166, 255, 0.5);
+        }
+        .job-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .job-item {
+            background: linear-gradient(145deg, #21262d, #161b22);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid rgba(48, 54, 61, 0.5);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .job-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+        }
+        .job-item label {
+            font-weight: bold;
+            color: #f0f6fc;
+        }
+        .job-item input {
+            width: 80px;
+            padding: 8px;
+            background: #0d1117;
+            color: #c9d1d9;
+            border: 1px solid #30363d;
+            border-radius: 4px;
+            text-align: center;
+            font-size: 1em;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+        .job-item input:focus {
+            outline: none;
+            border-color: #58a6ff;
+            box-shadow: 0 0 10px rgba(88, 166, 255, 0.5);
+        }
+        .job-item input:hover {
+            border-color: #79c0ff;
+        }
+        .job-icon {
+            font-size: 2em;
+            margin-bottom: 5px;
+        }
+        .job-A .job-icon { color: #ff6b6b; }
+        .job-B .job-icon { color: #4ecdc4; }
+        .job-C .job-icon { color: #ffe66d; }
+        .status {
+            font-size: 0.8em;
+            color: #8b949e;
+            margin-top: 5px;
+        }
+        .allocated { color: #238636; }
+        .pending { color: #d29922; }
+        button {
+            background: linear-gradient(145deg, #238636, #2ea043);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1em;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+        .menu {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .tag {
+            background: linear-gradient(145deg, #30363d, #21262d);
+            color: #c9d1d9;
+            padding: 10px 16px;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            font-weight: 500;
+        }
+        .tag:hover {
+            background: linear-gradient(145deg, #58a6ff, #79c0ff);
+            color: #0d1117;
+            transform: scale(1.05);
+            box-shadow: 0 4px 8px rgba(88, 166, 255, 0.3);
+        }
+        .selected-jobs {
+            margin-top: 20px;
+            padding: 15px;
+            background: linear-gradient(145deg, #161b22, #0d1117);
+            border-radius: 8px;
+            min-height: 60px;
+            border: 1px solid rgba(48, 54, 61, 0.3);
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.5);
+            font-style: italic;
+            color: #8b949e;
+        }
+        a {
+            color: #58a6ff;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 1.2em;
+            transition: color 0.3s;
+        }
+        a:hover {
+            color: #79c0ff;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <h1>Decentralized Zone Based AI Processing for Latency Mitigation in Deep Fleet Robotic Systems</h1>
+    <div class="container">
+        <div class="section">
+            <h2>Allocate Jobs</h2>
+            <div class="job-list" id="jobList">
+                <!-- Jobs will be populated by JS -->
+            </div>
+        </div>
+
+        <div style="text-align: center; margin-top: 40px;">
+            <a href="central.html">Proceed to Central Hub</a>
+        </div>
+    </div>
+
+    <script>
+        const jobs = ['A', 'B', 'C'];
+        const allocatedJobs = JSON.parse(localStorage.getItem('allocatedJobs') || '{}');
+
+        function init() {
+            const jobList = document.getElementById('jobList');
+            const initialAvail = JSON.parse(localStorage.getItem('initialAvailability') || '{}');
+            jobs.forEach(job => {
+                const div = document.createElement('div');
+                div.className = `job-item job-${job}`;
+                const qty = initialAvail[job] || 0;
+                const icons = {A: '🔧', B: '⚙️', C: '🛠️'};
+                div.innerHTML = `
+                    <div class="job-icon">${icons[job]}</div>
+                    <label>Job ${job}:</label>
+                    <input type="number" id="qty-${job}" min="0" value="${qty}" oninput="autoAllocate('${job}')">
+                    <div class="status ${qty > 0 ? 'allocated' : 'pending'}" id="status-${job}">${qty > 0 ? 'Allocated' : 'Pending'}</div>
+                `;
+                jobList.appendChild(div);
+            });
+
+            const jobMenu = document.getElementById('jobMenu');
+            jobs.forEach(job => {
+                const tag = document.createElement('div');
+                tag.className = 'tag';
+                tag.textContent = `Job ${job}`;
+                tag.onclick = () => showAllocated(job);
+                jobMenu.appendChild(tag);
+            });
+        }
+
+        function autoAllocate(job) {
+            const qty = parseInt(document.getElementById(`qty-${job}`).value) || 0;
+            const newAvailability = JSON.parse(localStorage.getItem('initialAvailability') || '{}');
+            newAvailability[job] = qty;
+            localStorage.setItem('initialAvailability', JSON.stringify(newAvailability));
+            document.getElementById(`status-${job}`).textContent = qty > 0 ? 'Allocated' : 'Pending';
+            document.getElementById(`status-${job}`).className = qty > 0 ? 'status allocated' : 'status pending';
+        }
+
+        function showAllocated(job) {
+            const avail = JSON.parse(localStorage.getItem('initialAvailability') || '{}');
+            const qty = avail[job] || 0;
+            document.getElementById('selectedJobs').innerHTML = `Allocated for Job ${job}: ${qty} jobs`;
+        }
+
+        init();
+    </script>
+</body>
+</html>
