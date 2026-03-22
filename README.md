@@ -1,0 +1,2 @@
+# Decentralized-Zone-Based-AI-Processing-for-Latency-Mitigation-in-Deep-Fleet-Robotic-Systems.
+The motive of this project is to shift from a global processing model to a Hierarchical Divisional Framework. Instead of a single "brain" attempting to micromanage every centimeter of movement for hundreds of robots, the warehouse is partitioned into physical "Divisions." Each division is equipped with its own Local AI Processor (Edge Node).
